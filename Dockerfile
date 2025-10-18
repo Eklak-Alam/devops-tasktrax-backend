@@ -9,31 +9,30 @@ COPY package*.json ./
 # Install dependencies
 RUN npm ci --only=production
 
-# Final lightweight image
+# Copy source code
+COPY . .
+
+# Production stage
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+RUN adduser -S nodejs -u 1001
 
-# Copy built dependencies from builder stage
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --chown=nextjs:nodejs . .
+# Copy built dependencies and source code
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --chown=nodejs:nodejs . .
 
-# Create .env file if it doesn't exist (for production)
-RUN if [ ! -f .env ]; then \
-      echo "PORT=5000" > .env && \
-      echo "NODE_ENV=production" >> .env; \
-    fi
-
-USER nextjs
+# Switch to non-root user
+USER nodejs
 
 EXPOSE 5000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node health-check.js
+# Health check (wait for backend to start)
+HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=5 \
+  CMD curl -f http://localhost:5000/api/health || exit 1
 
+# Start the application
 CMD ["node", "server.js"]
