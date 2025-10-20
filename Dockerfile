@@ -5,10 +5,9 @@ WORKDIR /app
 
 # Copy package files first for better caching
 COPY package*.json ./
-COPY .env.production ./
 
 # Install all dependencies
-RUN npm ci
+RUN npm ci --only=production
 
 # Copy source code
 COPY . .
@@ -41,7 +40,7 @@ USER nodejs
 
 EXPOSE 5000
 
-# Health check (wait for backend to start)
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:5000/api/health || exit 1
 

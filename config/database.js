@@ -9,7 +9,7 @@ const connectDB = () => {
   console.log(`🔄 Database connection attempt ${connectionAttempts + 1}/${maxAttempts}`);
   
   connection = mysql.createConnection({
-    host: process.env.DB_HOST || 'mysql',
+    host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || 'Eklakalam@7070',
     database: process.env.DB_NAME || 'tasktrax_db',
@@ -33,7 +33,7 @@ const connectDB = () => {
     }
 
     console.log('✅ Connected to MySQL database');
-    connectionAttempts = 0; // Reset counter on success
+    connectionAttempts = 0;
     
     // Create table
     const createTableQuery = `
@@ -53,7 +53,7 @@ const connectDB = () => {
       } else {
         console.log('✅ Tasks table ready');
         
-        // Test the connection with a sample query
+        // Test the connection
         connection.execute('SELECT COUNT(*) as task_count FROM tasks', (err, results) => {
           if (err) {
             console.error('❌ Test query failed:', err);
@@ -65,7 +65,7 @@ const connectDB = () => {
     });
   });
 
-  // Handle connection errors after initial connect
+  // Handle connection errors
   connection.on('error', (err) => {
     console.error('❌ Database connection error:', err.message);
     if (err.code === 'PROTOCOL_CONNECTION_LOST') {

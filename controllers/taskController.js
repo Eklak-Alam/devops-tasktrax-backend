@@ -133,7 +133,7 @@ const updateTask = (req, res) => {
     });
   }
 
-  // Build dynamic update query based on provided fields
+  // Build dynamic update query
   const updateFields = [];
   const queryParams = [];
 

@@ -3,7 +3,6 @@ const cors = require('cors');
 require('dotenv').config();
 
 const taskRoutes = require('./routes/taskRoutes');
-const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -29,14 +28,14 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/tasks', taskRoutes);
 
-// Health check route with detailed info
+// Health check route
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     message: 'DevOps TaskTrax Backend is running!',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-    version: process.env.npm_package_version || '1.0.0'
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
   });
 });
 
@@ -50,10 +49,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// Error handling middleware
-app.use(errorHandler);
-
-// 404 handler - must be last (FIXED: removed *)
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -63,7 +59,17 @@ app.use((req, res) => {
   });
 });
 
-// Graceful shutdown handling
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('❌ Server Error:', err);
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    message: 'Something went wrong!'
+  });
+});
+
+// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
   process.exit(0);
@@ -76,7 +82,6 @@ process.on('SIGINT', () => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 DevOps TaskTrax Backend running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV}`);
+  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📍 CORS Origin: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
 });
