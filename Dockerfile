@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY .env.production ./
 
-# Install all dependencies (including dev dependencies for build if needed)
+# Install all dependencies
 RUN npm ci
 
 # Copy source code
@@ -26,11 +26,11 @@ RUN addgroup -g 1001 -S nodejs && \
 RUN apk add --no-cache curl
 
 # Copy package files and production dependencies
-COPY package*..json ./
+COPY package*.json ./  # FIXED: package*..json -> package*.json
 COPY --from=builder /app/node_modules ./node_modules
 
 # Copy application code
-COPY --chown=nodejs:nodejs . .
+COPY --from=builder /app ./
 
 # Create logs directory and set permissions
 RUN mkdir -p logs && \
@@ -42,7 +42,7 @@ USER nodejs
 EXPOSE 5000
 
 # Health check (wait for backend to start)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:5000/api/health || exit 1
 
 # Start the application
