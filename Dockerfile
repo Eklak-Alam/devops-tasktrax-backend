@@ -26,7 +26,7 @@ RUN addgroup -g 1001 -S nodejs && \
 RUN apk add --no-cache curl
 
 # Copy package files and production dependencies
-COPY package*.json ./  # FIXED: package*..json -> package*.json
+COPY package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 
 # Copy application code
