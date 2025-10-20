@@ -1,7 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const taskRoutes = require('./routes/taskRoutes');
@@ -9,20 +7,6 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// Security middleware
-app.use(helmet());
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: {
-    success: false,
-    error: 'Too many requests from this IP, please try again later.'
-  }
-});
-app.use('/api/', limiter);
 
 // CORS configuration
 const corsOptions = {
@@ -69,8 +53,8 @@ app.get('/', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
-// 404 handler - must be last
-app.use('*', (req, res) => {
+// 404 handler - must be last (FIXED: removed *)
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     error: 'Route not found',
