@@ -3,11 +3,12 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better caching
 COPY package*.json ./
+COPY .env.production ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies (including dev dependencies for build if needed)
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -18,12 +19,22 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Create non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
-# Copy built dependencies and source code
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Copy package files and production dependencies
+COPY package*..json ./
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy application code
 COPY --chown=nodejs:nodejs . .
+
+# Create logs directory and set permissions
+RUN mkdir -p logs && \
+    chown -R nodejs:nodejs /app
 
 # Switch to non-root user
 USER nodejs
@@ -31,7 +42,7 @@ USER nodejs
 EXPOSE 5000
 
 # Health check (wait for backend to start)
-HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=5 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD curl -f http://localhost:5000/api/health || exit 1
 
 # Start the application
